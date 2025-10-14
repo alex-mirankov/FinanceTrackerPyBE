@@ -5,6 +5,8 @@ from jwt.exceptions import InvalidTokenError
 from config import *
 from datetime import datetime, timedelta, timezone
 
+from db.models.users_model import User
+
 env_variables = get_settings()
 
 class GoogleUser(BaseModel):
@@ -17,17 +19,29 @@ class GoogleUser(BaseModel):
     family_name: str
     exp: int
 
-
-def generate_jwt(google_user: GoogleUser):
-    to_encode = google_user.model_dump().copy()
+def generate_jwt(user: User):
     expire = datetime.now(timezone.utc) + timedelta(hours=24)
-    to_encode.update({ "exp": expire })
+    to_encode = {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "sub_id": user.sub_id,
+        "picture": user.picture,
+        "verified_email": user.verified_email,
+        "exp": expire,
+    }
+
     encoded_jwt = jwt.encode(to_encode, env_variables.jwt_secret, env_variables.jwt_algo)
     return encoded_jwt
 
 def decode_jwt(token: str):
     try:
         payload = jwt.decode(token, env_variables.jwt_secret, env_variables.jwt_algo)
+        if payload["exp"] + 24 * 60 * 60 * 1000 < int(datetime.now().timestamp()):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+            )
         return payload
     except InvalidTokenError:
         raise HTTPException(

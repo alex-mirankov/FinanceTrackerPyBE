@@ -1,6 +1,8 @@
 from fastapi import FastAPI
-from entities.transactions import router as transaction_router
+from entities.transactions import router as transactions_router
 from auth.auth import router as auth_router
+from entities.transaction_categories import router as transaction_categories_router
+from entities.finance_periods import router as finance_periods_router
 from entities.users import router as user_router
 from fastapi.middleware.cors import CORSMiddleware
 from middlewares.cookie_middleware import CookieMiddleware
@@ -23,8 +25,10 @@ app.add_middleware(
 app.add_middleware(CookieMiddleware)
 
 app.include_router(auth_router)
-app.include_router(transaction_router)
+app.include_router(transactions_router)
 app.include_router(user_router)
+app.include_router(transaction_categories_router)
+app.include_router(finance_periods_router)
 
 @app.get("/")
 async def root():

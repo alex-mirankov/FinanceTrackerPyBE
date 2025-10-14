@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Request, Response, HTTPException
+from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from google.oauth2 import id_token
-from google.auth.transport import requests
+from google.auth.transport import requests as auth_requests
 import httpx
 from auth.jwt_generation import *
 from config import *
+from sqlalchemy.orm import Session
+
+from db.connect import get_db
+from db.models.users_model import User
 
 env_variables = get_settings()
 
@@ -20,7 +24,7 @@ def oauth():
     return { "redirectUrl": google_auth_url }
 
 @router.get('/callback')
-async def auth_callback(code: str, request: Request, response: Response):
+async def auth_callback(code: str, request: Request, db: Session = Depends(get_db)):
     token = env_variables.token_uri
     data = {
         'code': code,
@@ -37,21 +41,30 @@ async def auth_callback(code: str, request: Request, response: Response):
 
     id_token_value = token_response.get('id_token')
     if not id_token_value:
-        raise HTTPException(status_code=400, detail="Missing id_token in response.")
-    
-    try:
-        id_info = id_token.verify_oauth2_token(id_token_value, requests.Request(), env_variables.client_id)
-        print('ID_INFO', id_info)
-        jwt_token = generate_jwt(GoogleUser(**id_info))
-        # Implement get or create user
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing id_token in response.")
 
+    try:
+        user_info = id_token.verify_oauth2_token(id_token_value, auth_requests.Request(), env_variables.client_id)
+        user = db.query(User).filter_by(sub_id=user_info["sub"]).first()
+        if not user:
+            user = User(
+                sub_id=user_info['sub'],
+                email=user_info['email'],
+                name=user_info['name'],
+                picture=user_info['picture'],
+                verified_email=user_info['email_verified']
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        jwt_token = generate_jwt(user)
         redirect_response = RedirectResponse(url=env_variables.fe_url)
-        redirect_response.set_cookie(key="jwt_token", value=jwt_token)
+        redirect_response.set_cookie(key="jwt_token", value=jwt_token, secure=True)
         return redirect_response
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid id_token: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid id_token: {str(e)}")
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 

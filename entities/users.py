@@ -11,4 +11,4 @@ router = APIRouter(
 @router.get('/')
 def get_user(request: Request, db: Session = Depends(get_db)):
     user = request.state.user_info
-    return db.query(User).filter_by(sub_id=user["sub"]).first()
+    return db.query(User).filter_by(sub_id=user["sub_id"]).first()

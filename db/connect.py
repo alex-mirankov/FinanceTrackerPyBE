@@ -6,7 +6,6 @@ from config import *
 env_variables = get_settings()
 
 DB_URL = f"postgresql://{env_variables.db_username}:{env_variables.db_password}@{env_variables.db_host}/{env_variables.db_name}"
-print(DB_URL)
 engine = create_engine(DB_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

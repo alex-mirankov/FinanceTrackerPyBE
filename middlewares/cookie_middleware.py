@@ -4,6 +4,9 @@ from auth.jwt_generation import *
 
 class CookieMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        if request.url.path.startswith("/api/v1/auth") or request.method == "OPTIONS":
+            return await call_next(request)
+
         jwt_token = request.cookies.get('jwt_token')
         if not jwt_token:
             raise HTTPException(
