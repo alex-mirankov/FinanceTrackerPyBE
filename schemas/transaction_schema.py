@@ -18,7 +18,7 @@ class TransactionCreateResponse(BaseModel):
 
 class TransactionResponse(BaseModel):
     id: int
-    categoryId: int
+    category: dict
     date: datetime
     amount: float
     comment: str

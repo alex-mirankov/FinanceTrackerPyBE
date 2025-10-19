@@ -1,7 +1,6 @@
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 import jwt
-from jwt.exceptions import InvalidTokenError
 from config import *
 from datetime import datetime, timedelta, timezone
 
@@ -35,16 +34,4 @@ def generate_jwt(user: User):
     return encoded_jwt
 
 def decode_jwt(token: str):
-    try:
-        payload = jwt.decode(token, env_variables.jwt_secret, env_variables.jwt_algo)
-        if payload["exp"] + 24 * 60 * 60 * 1000 < int(datetime.now().timestamp()):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-            )
-        return payload
-    except InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-        )
+    return jwt.decode(token, env_variables.jwt_secret, env_variables.jwt_algo)

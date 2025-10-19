@@ -59,7 +59,7 @@ async def auth_callback(code: str, request: Request, db: Session = Depends(get_d
             db.refresh(user)
         jwt_token = generate_jwt(user)
         redirect_response = RedirectResponse(url=env_variables.fe_url)
-        redirect_response.set_cookie(key="jwt_token", value=jwt_token, secure=True)
+        redirect_response.set_cookie(key="jwt_token", value=jwt_token, secure=True, httponly=True)
         return redirect_response
 
     except ValueError as e:
