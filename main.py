@@ -16,6 +16,7 @@ from auth.auth import router as auth_router
 from entities.finance_periods import router as finance_periods_router
 from entities.transaction_categories import router as transaction_categories_router
 from entities.transactions import router as transactions_router
+from entities.users import router as users_router
 from middlewares.cookie_middleware import CookieMiddleware
 
 origins = [
@@ -45,3 +46,4 @@ app.include_router(auth_router)
 app.include_router(transactions_router)
 app.include_router(transaction_categories_router)
 app.include_router(finance_periods_router)
+app.include_router(users_router)

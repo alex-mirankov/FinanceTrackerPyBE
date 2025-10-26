@@ -36,6 +36,7 @@ def get_transactions(
     page: int = 0,
     size: int = 20,
     categoryId: int = 0,
+    date: str = "",
 ):
     """
     Retrieve paginated transactions with optional filtering.
@@ -50,6 +51,7 @@ def get_transactions(
         periodId (int, optional): Filter by finance period ID (0 = no filter). Defaults to 0
         page (int, optional): Page number for pagination (0-based). Defaults to 0
         size (int, optional): Number of items per page. Defaults to 20
+        date (str, optional): Filter by date. Defaults to empty string
         categoryId (int, optional): Filter by category ID (0 = no filter). Defaults to 0
 
     Returns:
@@ -95,6 +97,12 @@ def get_transactions(
         if categoryId != 0:
             transaction_query = transaction_query.filter(
                 TransactionCategory.id == categoryId
+            )
+
+        if date != "":
+            split_date = date.split(";")
+            transaction_query = transaction_query.filter(
+                Transaction.date >= split_date[0], Transaction.date <= split_date[1]
             )
 
         total_count = transaction_query.count()
